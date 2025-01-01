@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.helpdesk.responses.ApiResponse;
 import com.helpdesk.users.User;
 
+import java.util.HashMap;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -23,17 +25,17 @@ public class AuthController {
         this.authenticationService = authenticationService;
     }
 
-      @GetMapping("/me")
+    // Endpoint to get the logged-in user's details
+    @GetMapping("/me")
     public ResponseEntity<ApiResponse<User>> me(@AuthenticationPrincipal UserDetails userDetails) {
         ApiResponse<User> response = this.authenticationService.me(userDetails);
-
         return ResponseEntity.ok(response);
     }
 
+    // Login endpoint
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<User>> login(@RequestBody AuthDTO authenticationDto) {
-        ApiResponse<User> response = this.authenticationService.login(authenticationDto);
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiResponse<HashMap<String, Object>>> login(@RequestBody AuthDTO authenticationDto) {
+        ApiResponse<HashMap<String, Object>> response = this.authenticationService.login(authenticationDto);
+        return ResponseEntity.ok(response);  // Wrap the ApiResponse in a ResponseEntity
     }
 }
