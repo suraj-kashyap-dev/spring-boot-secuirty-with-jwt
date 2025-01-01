@@ -6,7 +6,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.helpdesk.users.User;
-import com.helpdesk.users.UserPrincipal;
 import com.helpdesk.users.UserRepository;
 
 @Service
@@ -24,6 +23,8 @@ public class UserDetailsService implements org.springframework.security.core.use
             throw new UsernameNotFoundException("User not found");
         }
 
-        return new UserPrincipal(user);
+        System.out.println("User Found " + user.toString());
+
+        return user;
     }
 }

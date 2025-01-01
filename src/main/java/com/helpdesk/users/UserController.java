@@ -3,6 +3,8 @@ package com.helpdesk.users;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,13 +32,6 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<ApiResponse<User>> login(@RequestBody UserDto userDto) {
-        ApiResponse<User> response = this.userService.login(userDto);
-
-        return ResponseEntity.ok(response);
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<User>> show(@PathVariable Long id) {
         ApiResponse<User> response = this.userService.show(id);
@@ -45,7 +40,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<User>> store(@RequestBody UserDto userDto) {
+    public ResponseEntity<ApiResponse<User>> store(@RequestBody UserDTO userDto) {
         ApiResponse<User> response = this.userService.store(userDto);
 
         return ResponseEntity.ok(response);
@@ -54,7 +49,7 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<User>> update(
         @PathVariable Long id,
-        @RequestBody UserDto userDto
+        @RequestBody UserDTO userDto
     ) {
         ApiResponse<User> response = this.userService.update(id, userDto);
 

@@ -1,13 +1,21 @@
 package com.helpdesk.userinstances;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.helpdesk.roles.Role;
 import com.helpdesk.users.User;
 
 @Entity
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "user_instances")
 public class UserInstance {
     @Id
@@ -32,7 +40,7 @@ public class UserInstance {
     @Column(columnDefinition = "TEXT")
     private String profileImagePath;
 
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
@@ -50,11 +58,18 @@ public class UserInstance {
     @Column(length = 32)
     private String ticketAccessLevel;
 
+    @Transient
     private Integer defaultFiltering;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id")
+    @JsonBackReference
+    private Role role;
 
     @PrePersist
     protected void onCreate() {
@@ -64,5 +79,17 @@ public class UserInstance {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+    
+    public boolean isActive() {
+        return active;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public boolean isStarred() {
+        return starred;
     }
 }

@@ -1,11 +1,20 @@
 package com.helpdesk.users;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.helpdesk.userinstances.UserInstance;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import lombok.Data;
+import java.time.LocalDateTime;
+import java.util.List;
 
-@Data
-public class UserDto {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserDTO {
     @JsonProperty("id")
     private Long id;
 
@@ -15,24 +24,36 @@ public class UserDto {
     @JsonProperty("proxy_id")
     private String proxyId;
 
-    @JsonProperty("password")
-    private String password;
-
     @JsonProperty("first_name")
     private String firstName;
 
     @JsonProperty("last_name")
     private String lastName;
 
-    @JsonProperty("enabled")
+    @JsonProperty("is_enabled")
     private boolean enabled;
-
-    @JsonProperty("verification_code")
-    private String verificationCode;
 
     @JsonProperty("timezone")
     private String timezone;
 
     @JsonProperty("time_format")
-    private String timeFormat;
+    private String timeformat;
+
+    @JsonProperty("password")
+    private String password;
+
+    @JsonProperty("created_at")
+    private LocalDateTime createdAt;
+
+    @JsonProperty("updated_at")
+    private LocalDateTime updatedAt;
+
+    @JsonProperty("user_instances")
+    private List<UserInstance> userInstances;
+
+    @JsonProperty("granted_roles")
+    private List<String> grantedRoles;
+
+    @JsonProperty("active_instance")
+    private UserInstance activeInstance;
 }

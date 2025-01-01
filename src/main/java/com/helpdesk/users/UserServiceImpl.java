@@ -1,46 +1,30 @@
 package com.helpdesk.users;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import com.helpdesk.exceptions.resources.ResourceCreationException;
 import com.helpdesk.exceptions.resources.ResourceDeletionException;
 import com.helpdesk.exceptions.resources.ResourceNotFoundException;
 import com.helpdesk.exceptions.resources.ResourceUpdateException;
 import com.helpdesk.responses.ApiResponse;
-import com.helpdesk.services.JwtService;
 
 @Service
 public class UserServiceImpl implements UserService {
-    private final UserRepository userRepository;
-    private final ModelMapper modelMapper;
-    private BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder(12);
-    private AuthenticationManager authenticationManager;
-    private JwtService jwtService;
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
-    public UserServiceImpl(
-        UserRepository userRepository,
-        ModelMapper modelMapper,
-        AuthenticationManager authenticationManager,
-        JwtService jwtService
-    ) {
-        this.userRepository = userRepository;
-        this.modelMapper = modelMapper;
-        this.authenticationManager = authenticationManager; 
-        this.jwtService = jwtService;
-    }
+    private ModelMapper modelMapper;
+    
+    private final BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder(12);
 
     @Override
     public ApiResponse<List<User>> index() {
@@ -68,7 +52,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ApiResponse<User> store(UserDto userDto) {
+    public ApiResponse<User> store(UserDTO userDto) {
         try {
             User user = this.modelMapper.map(userDto, User.class);
 
@@ -87,32 +71,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ApiResponse login(UserDto userDto) {
-        Authentication authentication = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(userDto.getEmail(), userDto.getPassword())
-        );
-
-        if (authentication.isAuthenticated()) {
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            User user = this.userRepository.findByEmail(userDetails.getUsername());
-
-            if (user == null) {
-                throw new BadCredentialsException("Invalid email or password");
-            }
-
-            HashMap<String, Object> data = new HashMap<>();
-            data.put("token", this.jwtService.generateToken(user.getEmail()));
-            data.put("user", user);
-
-            return ApiResponse.success("Login successful", data);
-        }
-
-        throw new BadCredentialsException("Invalid email or password");
-    }
-
-
-    @Override
-    public ApiResponse<User> update(Long id, UserDto userDto) {
+    public ApiResponse<User> update(Long id, UserDTO userDto) {
         try {
             Optional<User> userOpt = this.userRepository.findById(id);
 
