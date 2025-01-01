@@ -25,17 +25,15 @@ public class AuthController {
         this.authenticationService = authenticationService;
     }
 
-    // Endpoint to get the logged-in user's details
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<User>> me(@AuthenticationPrincipal UserDetails userDetails) {
         ApiResponse<User> response = this.authenticationService.me(userDetails);
         return ResponseEntity.ok(response);
     }
 
-    // Login endpoint
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<HashMap<String, Object>>> login(@RequestBody AuthDTO authenticationDto) {
         ApiResponse<HashMap<String, Object>> response = this.authenticationService.login(authenticationDto);
-        return ResponseEntity.ok(response);  // Wrap the ApiResponse in a ResponseEntity
+        return ResponseEntity.ok(response);
     }
 }

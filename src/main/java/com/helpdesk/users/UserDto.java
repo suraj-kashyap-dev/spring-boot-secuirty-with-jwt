@@ -54,7 +54,8 @@ public class UserDTO {
     @JsonProperty("active_instance")
     private UserInstance activeInstance;
 
-    public User toUser() {
+    // Convert DTO to Entity
+    public User toEntity() {
         User user = new User();
         user.setId(this.id);
         user.setEmail(this.email);
@@ -70,5 +71,24 @@ public class UserDTO {
         user.setUserInstances(this.userInstances);
         user.setActiveInstance(this.activeInstance);
         return user;
+    }
+
+    // Convert Entity to DTO
+    public static UserDTO fromEntity(User user) {
+        return new UserDTO(
+            user.getId(),
+            user.getEmail(),
+            user.getProxyId(),
+            user.getFirstName(),
+            user.getLastName(),
+            user.isEnabled(),
+            user.getTimezone(),
+            user.getTimeformat(),
+            user.getPassword(),
+            user.getCreatedAt(),
+            user.getUpdatedAt(),
+            user.getUserInstances(),
+            user.getActiveUserInstance()
+        );
     }
 }

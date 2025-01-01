@@ -1,15 +1,15 @@
 package com.helpdesk.roles;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.helpdesk.userinstances.UserInstance;
+
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
 
 @Entity
 @Setter
@@ -27,4 +27,13 @@ public class Role {
 
     @Column(length = 191)
     private String description;
+
+    @OneToMany(mappedBy = "role", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JsonBackReference
+    private List<UserInstance> userInstances;
+
+    public Role(String code, String description) {
+        this.code = code;
+        this.description = description;
+    }
 }
