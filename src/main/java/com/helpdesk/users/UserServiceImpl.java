@@ -1,5 +1,6 @@
 package com.helpdesk.users;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,11 +14,17 @@ import com.helpdesk.exceptions.resources.ResourceDeletionException;
 import com.helpdesk.exceptions.resources.ResourceNotFoundException;
 import com.helpdesk.exceptions.resources.ResourceUpdateException;
 import com.helpdesk.responses.ApiResponse;
+import com.helpdesk.roles.Role;
+import com.helpdesk.roles.RoleRepository;
+import com.helpdesk.userinstances.UserInstance;
 
 @Service
 public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -54,6 +61,21 @@ public class UserServiceImpl implements UserService {
         try {
             User user = this.modelMapper.map(userDto, User.class);
 
+            UserInstance adminInstance = new UserInstance();
+
+            Role customer = roleRepository.findByCode("ROLE_CUSTOMER")
+                .orElseThrow(() -> new RuntimeException("[ERROR] Role not found"));
+
+            adminInstance.setUser(user);
+            adminInstance.setSource("website");
+            adminInstance.setCreatedAt(LocalDateTime.now());
+            adminInstance.setUpdatedAt(LocalDateTime.now());
+            adminInstance.setActive(true);
+            adminInstance.setVerified(true);
+            adminInstance.setRole(customer);
+
+            user.setActiveInstance(adminInstance);
+            user.setUserInstances(List.of(adminInstance));
             user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
             
             return ApiResponse.success(

@@ -3,6 +3,7 @@ package com.helpdesk.users;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,6 +20,7 @@ import java.util.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 @Table(name = "users")
 public class User implements UserDetails {
     @Id
@@ -62,9 +64,10 @@ public class User implements UserDetails {
     private LocalDateTime updatedAt;
 
     @Transient
+    @JsonManagedReference
     private UserInstance activeInstance;
 
-    @JsonManagedReference
+    @JsonManagedReference("user-userInstance")
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<UserInstance> userInstances = new ArrayList<>();
 
@@ -78,24 +81,11 @@ public class User implements UserDetails {
         updatedAt = LocalDateTime.now();
     }
 
-    // @Override
-    // public Collection<? extends GrantedAuthority> getAuthorities() {
-    //     List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-
-    //     for (String role : grantedRoles) {
-    //         authorities.add(new SimpleGrantedAuthority(role));
-    //     }
-
-    //     return authorities;
-    // }
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Collection<GrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        
         authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-        
         return authorities;
     }
 
@@ -131,7 +121,25 @@ public class User implements UserDetails {
                 .findFirst()
                 .orElse(userInstances.get(0));
         }
-
         return activeInstance;
+    }
+
+    // Convert User to UserDTO
+    public UserDTO toUserDTO() {
+        return new UserDTO(
+            this.id,
+            this.email,
+            this.proxyId,
+            this.firstName,
+            this.lastName,
+            this.enabled,
+            this.timezone,
+            this.timeformat,
+            this.password,
+            this.createdAt,
+            this.updatedAt,
+            this.userInstances,
+            this.getActiveUserInstance()
+        );
     }
 }

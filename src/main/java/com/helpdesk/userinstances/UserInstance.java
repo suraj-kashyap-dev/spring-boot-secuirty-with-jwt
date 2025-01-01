@@ -61,13 +61,13 @@ public class UserInstance {
     @Transient
     private Integer defaultFiltering;
 
+    @JsonBackReference("user-userInstance")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    @JsonBackReference
+    @JoinColumn(name = "user_id")
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_id")
+    @JoinColumn(name = "role_id", nullable = false)
     @JsonBackReference
     private Role role;
 

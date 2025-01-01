@@ -51,9 +51,24 @@ public class UserDTO {
     @JsonProperty("user_instances")
     private List<UserInstance> userInstances;
 
-    @JsonProperty("granted_roles")
-    private List<String> grantedRoles;
-
     @JsonProperty("active_instance")
     private UserInstance activeInstance;
+
+    public User toUser() {
+        User user = new User();
+        user.setId(this.id);
+        user.setEmail(this.email);
+        user.setProxyId(this.proxyId);
+        user.setFirstName(this.firstName);
+        user.setLastName(this.lastName);
+        user.setEnabled(this.enabled);
+        user.setTimezone(this.timezone);
+        user.setTimeformat(this.timeformat);
+        user.setPassword(this.password);
+        user.setCreatedAt(this.createdAt);
+        user.setUpdatedAt(this.updatedAt);
+        user.setUserInstances(this.userInstances);
+        user.setActiveInstance(this.activeInstance);
+        return user;
+    }
 }
