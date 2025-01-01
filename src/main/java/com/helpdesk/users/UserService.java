@@ -2,8 +2,6 @@ package com.helpdesk.users;
 
 import java.util.List;
 
-import org.springframework.security.core.userdetails.UserDetails;
-
 import com.helpdesk.responses.ApiResponse;
 
 public interface UserService {

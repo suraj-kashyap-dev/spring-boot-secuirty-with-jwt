@@ -2,10 +2,8 @@ package com.helpdesk.auth;
 
 import java.util.HashMap;
 
-import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,7 +12,6 @@ import org.springframework.stereotype.Service;
 import com.helpdesk.responses.ApiResponse;
 import com.helpdesk.services.JwtService;
 import com.helpdesk.users.User;
-import com.helpdesk.users.UserDTO;
 import com.helpdesk.users.UserRepository;
 
 @Service
