@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.helpdesk.userinstances.UserInstance;
+
 @Entity
 @Getter
 @Setter
@@ -40,7 +42,7 @@ public class User {
     private String verificationCode;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<UserProfile> userProfiles = new ArrayList<>();
+    private List<UserInstance> userProfiles = new ArrayList<>();
 
     private String timezone;
 

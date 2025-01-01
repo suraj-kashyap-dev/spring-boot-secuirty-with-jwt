@@ -19,7 +19,7 @@ import com.helpdesk.exceptions.resources.ResourceDeletionException;
 import com.helpdesk.exceptions.resources.ResourceNotFoundException;
 import com.helpdesk.exceptions.resources.ResourceUpdateException;
 import com.helpdesk.responses.ApiResponse;
-import com.helpdesk.services.JWTService;
+import com.helpdesk.services.JwtService;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -27,14 +27,14 @@ public class UserServiceImpl implements UserService {
     private final ModelMapper modelMapper;
     private BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder(12);
     private AuthenticationManager authenticationManager;
-    private JWTService jwtService;
+    private JwtService jwtService;
 
     @Autowired
     public UserServiceImpl(
         UserRepository userRepository,
         ModelMapper modelMapper,
         AuthenticationManager authenticationManager,
-        JWTService jwtService
+        JwtService jwtService
     ) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;

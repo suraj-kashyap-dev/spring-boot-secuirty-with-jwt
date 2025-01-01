@@ -1,13 +1,15 @@
-package com.helpdesk.users;
+package com.helpdesk.userinstances;
 
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 
+import com.helpdesk.users.User;
+
 @Entity
 @Data
-@Table(name = "user_profiles")
-public class UserProfile {
+@Table(name = "user_instances")
+public class UserInstance {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -9,11 +9,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.lang.NonNull;
 
-import com.helpdesk.services.JWTService;
+import com.helpdesk.services.JwtService;
 import com.helpdesk.services.UserDetailsService;
 
 import jakarta.servlet.FilterChain;
@@ -24,7 +23,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtFilter extends OncePerRequestFilter {
     @Autowired
-    private JWTService jwtService;
+    private JwtService jwtService;
 
     @Autowired
     private ApplicationContext applicationContext;
