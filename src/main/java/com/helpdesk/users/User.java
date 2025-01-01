@@ -1,48 +1,48 @@
 package com.helpdesk.users;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import lombok.ToString;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.helpdesk.userinstances.UserInstance;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
-
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
 @Table(name = "users")
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Email(message = "Email should be valid")
     @Column(length = 191, unique = true, nullable = false)
     private String email;
 
-    @Column(length = 191, unique = true, nullable = true)
-    private String proxyId;
-
+    @NotNull(message = "Password should not be null")
+    @Size(min = 8, message = "Password should be at least 8 characters")
     @Column(length = 191, nullable = false)
     private String password;
 
+    @NotEmpty(message = "First name should not be empty")
     @Column(length = 191, nullable = false)
     private String firstName;
 
-    @Column(length = 191, nullable = true)
+    @Column(length = 191)
     private String lastName;
 
     @Column(nullable = false)
@@ -50,12 +50,6 @@ public class User implements UserDetails {
 
     @Column(length = 191, unique = true)
     private String verificationCode;
-
-    @Column(length = 191)
-    private String timezone;
-
-    @Column(length = 191)
-    private String timeformat;
 
     @Column
     private LocalDateTime lastOtpGeneratedAt;
@@ -66,57 +60,17 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    @Transient
-    @JsonManagedReference
-    private UserInstance activeInstance;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonIgnore
-    private List<UserInstance> userInstances = new ArrayList<>();
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
-    public UserInstance getActiveUserInstance() {
-        if (activeInstance == null && !userInstances.isEmpty()) {
-            activeInstance = userInstances.stream()
-                .filter(UserInstance::isActive)
-                .findFirst()
-                .orElse(userInstances.get(0));
-        }
-        return activeInstance;
-    }
-
-    public UserDTO toUserDTO() {
-        return new UserDTO(
-            this.id,
-            this.email,
-            this.proxyId,
-            this.firstName,
-            this.lastName,
-            this.enabled,
-            this.timezone,
-            this.timeformat,
-            this.password,
-            this.createdAt,
-            this.updatedAt,
-            this.userInstances,
-            this.getActiveUserInstance()
-        );
-    }
+    private Set<UserInstance> userInstances = new HashSet<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        Collection<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        Set<GrantedAuthority> authorities = new HashSet<>();
+        UserInstance activeInstance = getActiveUserInstance();
+        if (activeInstance != null && activeInstance.getRole() != null) {
+            authorities.add(new SimpleGrantedAuthority(activeInstance.getRole().getCode()));
+        }
         return authorities;
     }
 
@@ -140,8 +94,20 @@ public class User implements UserDetails {
         return true;
     }
 
-    @Override
-    public boolean isEnabled() {
-        return this.enabled;
+    public UserInstance getActiveUserInstance() {
+        return userInstances.stream()
+            .filter(UserInstance::isActive)
+            .findFirst()
+            .orElse(null);
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

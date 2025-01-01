@@ -16,7 +16,7 @@ import java.util.*;
 
 @Component
 public class InstallHelpDesk implements CommandLineRunner {
-    @Value("${helpdesk.admin.email}")
+    @Value("${helpdesk.admin.password}")
     private String password;
 
     @Value("${helpdesk.admin.email}")
@@ -50,8 +50,7 @@ public class InstallHelpDesk implements CommandLineRunner {
 
     private boolean initializeRoles() {
         List<Role> roles = List.of(
-            new Role("ROLE_SUPER_ADMIN", "Account Owner"),
-            new Role("ROLE_ADMIN", "Administrator"),
+            new Role("ROLE_ADMIN", "Account Owner"),
             new Role("ROLE_AGENT", "Agent"),
             new Role("ROLE_CUSTOMER", "Customer")
         );
@@ -89,8 +88,8 @@ public class InstallHelpDesk implements CommandLineRunner {
         admin.setCreatedAt(LocalDateTime.now());
         admin.setUpdatedAt(LocalDateTime.now());
 
-        Role superAdminRole = roleRepository.findByCode("ROLE_SUPER_ADMIN")
-            .orElseThrow(() -> new RuntimeException("[ERROR] Super Admin role not found"));
+        Role adminRole = roleRepository.findByCode("ROLE_ADMIN")
+            .orElseThrow(() -> new RuntimeException("[ERROR] Admin role not found"));
 
         UserInstance adminInstance = new UserInstance();
         adminInstance.setUser(admin);
@@ -99,9 +98,10 @@ public class InstallHelpDesk implements CommandLineRunner {
         adminInstance.setUpdatedAt(LocalDateTime.now());
         adminInstance.setActive(true);
         adminInstance.setVerified(true);
-        adminInstance.setRole(superAdminRole);
+        adminInstance.setRole(adminRole);
 
-        admin.setUserInstances(List.of(adminInstance));
+        admin.setUserInstances(Set.of(adminInstance));
+
         userRepository.save(admin);
 
         return true;

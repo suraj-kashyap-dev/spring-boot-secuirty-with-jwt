@@ -27,13 +27,11 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<User>> me(@AuthenticationPrincipal UserDetails userDetails) {
-        ApiResponse<User> response = this.authenticationService.me(userDetails);
-        return ResponseEntity.ok(response);
+        return this.authenticationService.me(userDetails);
     }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<HashMap<String, Object>>> login(@RequestBody AuthDTO authenticationDto) {
-        ApiResponse<HashMap<String, Object>> response = this.authenticationService.login(authenticationDto);
-        return ResponseEntity.ok(response);
+        return this.authenticationService.login(authenticationDto);
     }
 }

@@ -1,132 +1,108 @@
 package com.helpdesk.users;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import com.helpdesk.exceptions.resources.ResourceCreationException;
-import com.helpdesk.exceptions.resources.ResourceDeletionException;
 import com.helpdesk.exceptions.resources.ResourceNotFoundException;
-import com.helpdesk.exceptions.resources.ResourceUpdateException;
 import com.helpdesk.responses.ApiResponse;
 import com.helpdesk.roles.Role;
 import com.helpdesk.roles.RoleRepository;
 import com.helpdesk.userinstances.UserInstance;
 
+import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
+@Transactional
 public class UserServiceImpl implements UserService {
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final ModelMapper modelMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
-    private ModelMapper modelMapper;
-    
-    private final BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder(12);
-
-    @Override
-    public ApiResponse<List<User>> index() {
-        try {
-            List<User> users = this.userRepository.findAllByOrderByCreatedAtDesc();
-            return ApiResponse.success("Users retrieved successfully", users);
-        } catch (Exception e) {
-            throw new RuntimeException("Error retrieving users", e);
-        }
+    public UserServiceImpl(
+        UserRepository userRepository,
+        RoleRepository roleRepository, 
+        ModelMapper modelMapper,
+        PasswordEncoder passwordEncoder
+    ) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.modelMapper = modelMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
-    public ApiResponse<User> show(Long id) {
-        try {
-            Optional<User> users = this.userRepository.findById(id);
-
-            return users
-                .map(user -> ApiResponse.success("User retrieved successfully", user))
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        } catch (Exception e) {
-            e.printStackTrace();
-
-            throw new RuntimeException("Error retrieving user");
-        }
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<User>>> index() {
+        List<User> users = userRepository.findAllByOrderByCreatedAtDesc();
+        return ApiResponse.ok("Users retrieved successfully", users);
     }
 
     @Override
-    public ApiResponse<User> store(UserDTO userDto) {
-        try {
-            User user = this.modelMapper.map(userDto, User.class);
-
-            UserInstance adminInstance = new UserInstance();
-
-            Role customer = roleRepository.findByCode("ROLE_CUSTOMER")
-                .orElseThrow(() -> new RuntimeException("[ERROR] Role not found"));
-
-            adminInstance.setUser(user);
-            adminInstance.setSource("website");
-            adminInstance.setCreatedAt(LocalDateTime.now());
-            adminInstance.setUpdatedAt(LocalDateTime.now());
-            adminInstance.setActive(true);
-            adminInstance.setVerified(true);
-            adminInstance.setRole(customer);
-
-            user.setActiveInstance(adminInstance);
-            user.setUserInstances(List.of(adminInstance));
-            user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-            
-            return ApiResponse.success(
-                "User created successfully", 
-                this.userRepository.save(user)
-            );
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new ResourceCreationException("Error creating user: " + e.getMessage());
-        }
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    public ResponseEntity<ApiResponse<User>> show(Long id) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return ApiResponse.ok("User retrieved successfully", user);
     }
 
     @Override
-    public ApiResponse<User> update(Long id, UserDTO userDto) {
-        try {
-            Optional<User> userOpt = this.userRepository.findById(id);
+    @Transactional
+    public ResponseEntity<ApiResponse<User>> store(@Valid UserDTO userDto) {
+        User user = modelMapper.map(userDto, User.class);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-            if (userOpt.isEmpty()) {
-                throw new ResourceNotFoundException("User not found");
-            }
+        Role customerRole = roleRepository.findByCode("ROLE_CUSTOMER")
+            .orElseThrow(() -> new ResourceNotFoundException("Default role not found"));
 
-            User existingUser = userOpt.get();
+        UserInstance userInstance = new UserInstance();
+        userInstance.setUser(user);
+        userInstance.setRole(customerRole);
+        userInstance.setSource("website");
+        userInstance.setActive(true);
+        userInstance.setVerified(true);
 
-            return ApiResponse.success(
-                "User updated successfully", 
-                this.userRepository.save(existingUser)
-            );
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            e.printStackTrace();
-
-            throw new ResourceUpdateException("Error updating User: " + e.getMessage());
-        }
+        user.setUserInstances(Set.of(userInstance));
+        User savedUser = userRepository.save(user);
+        
+        return ApiResponse.ok("User created successfully", savedUser);
     }
 
     @Override
-    public ApiResponse<Void> destroy(Long id) {
-        try {
-            if (! this.userRepository.existsById(id)) {
-                throw new ResourceNotFoundException("User not found");
-            }
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<User>> update(Long id, @Valid UserDTO userDto) {
+        User existingUser = userRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-            this.userRepository.deleteById(id);
-            return ApiResponse.success("User deleted successfully", null);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ResourceDeletionException("Error deleting user");
+        modelMapper.map(userDto, existingUser);
+        
+        if (userDto.getPassword() != null) {
+            existingUser.setPassword(passwordEncoder.encode(userDto.getPassword()));
         }
+
+        User updatedUser = userRepository.save(existingUser);
+        return ApiResponse.ok("User updated successfully", updatedUser);
+    }
+
+    @Override
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> destroy(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new ResourceNotFoundException("User not found");
+        }
+        userRepository.deleteById(id);
+        return ApiResponse.ok("User deleted successfully", null);
     }
 }

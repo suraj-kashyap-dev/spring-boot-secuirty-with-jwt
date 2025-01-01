@@ -1,13 +1,13 @@
 package com.helpdesk.users;
 
+import org.springframework.http.ResponseEntity;
+import com.helpdesk.responses.ApiResponse;
 import java.util.List;
 
-import com.helpdesk.responses.ApiResponse;
-
 public interface UserService {
-    public ApiResponse<List<User>> index();
-    public ApiResponse<User> show(Long id);
-    public ApiResponse<User> store(UserDTO userDto);
-    public ApiResponse<User> update(Long id, UserDTO userDto);
-    public ApiResponse<Void> destroy(Long id);
+    ResponseEntity<ApiResponse<List<User>>> index();
+    ResponseEntity<ApiResponse<User>> show(Long id);
+    ResponseEntity<ApiResponse<User>> store(UserDTO userDto);
+    ResponseEntity<ApiResponse<User>> update(Long id, UserDTO userDto);
+    ResponseEntity<ApiResponse<Void>> destroy(Long id);
 }

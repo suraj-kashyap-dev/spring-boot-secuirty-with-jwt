@@ -1,8 +1,11 @@
 package com.helpdesk.auth;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -16,58 +19,58 @@ import com.helpdesk.users.UserRepository;
 
 @Service
 public class AuthServiceImpl implements AuthService {
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
+    private final JwtService jwtService;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private JwtService jwtService;
+    public AuthServiceImpl(AuthenticationManager authenticationManager, 
+                         UserRepository userRepository, 
+                         JwtService jwtService) {
+        this.authenticationManager = authenticationManager;
+        this.userRepository = userRepository;
+        this.jwtService = jwtService;
+    }
     
     @Override
-    public ApiResponse<User> me(UserDetails userDetails) {
-        try {
-            if (userDetails == null) {
-                return ApiResponse.error("User is not authenticated");
-            }
-    
-        return ApiResponse.success("User retrieved successfully", (User) userDetails);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ApiResponse.error("Error retrieving user");
+    public ResponseEntity<ApiResponse<User>> me(UserDetails userDetails) {
+        if (userDetails == null) {
+            return ApiResponse.error("User is not authenticated", HttpStatus.UNAUTHORIZED);
         }
+        return ApiResponse.ok("User retrieved successfully", (User) userDetails);
     }
 
-    public ApiResponse<HashMap<String, Object>> login(AuthDTO authenticationDto) {
-        Authentication authentication = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(authenticationDto.getEmail(), authenticationDto.getPassword())
-        );
-    
-        System.out.println(authenticationDto.toString());
-    
-        if (authentication.isAuthenticated()) {
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-    
-            User user = this.userRepository.findByEmail(userDetails.getUsername());
-    
-            if (user == null) {
-                // Return a detailed error message when the user is not found
-                HashMap<String, String> errors = new HashMap<>();
-                errors.put("email", "Invalid email or password");
-                return ApiResponse.error("Login failed", errors);
+    @Override
+    public ResponseEntity<ApiResponse<HashMap<String, Object>>> login(AuthDTO authenticationDto) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                    authenticationDto.getEmail(), 
+                    authenticationDto.getPassword()
+                )
+            );
+
+            if (!authentication.isAuthenticated()) {
+                Map<String, Object> errors = new HashMap<>();
+                errors.put("credentials", "Invalid credentials");
+                return ApiResponse.error("Login failed", errors, HttpStatus.UNAUTHORIZED);
             }
-    
+
+            User user = userRepository.findByEmail(authenticationDto.getEmail());
+            if (user == null) {
+                Map<String, Object> errors = new HashMap<>();
+                errors.put("email", "User not found");
+                return ApiResponse.error("Login failed", errors, HttpStatus.NOT_FOUND);
+            }
+
             HashMap<String, Object> data = new HashMap<>();
-            data.put("token", this.jwtService.generateToken(user.getEmail()));
+            data.put("token", jwtService.generateToken(user.getEmail()));
             data.put("user", user);
-    
-            return ApiResponse.success("Login successful", data);
+
+            return ApiResponse.ok("Login successful", data);
+        } catch (Exception e) {
+            System.out.println("Authentication error: " + e.getMessage());
+            return ApiResponse.error("Authentication failed", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    
-        HashMap<String, String> errors = new HashMap<>();
-        errors.put("credentials", "Invalid email or password");
-        return ApiResponse.error("Login failed", errors);
     }
-    
 }

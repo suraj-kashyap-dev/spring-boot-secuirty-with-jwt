@@ -14,10 +14,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.helpdesk.responses.ApiResponse;
 
+import jakarta.validation.Valid;
+
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/v1/user")
 public class UserController {
-   private final UserService userService;
+    private final UserService userService;
 
     public UserController(UserService userService) {
         this.userService = userService;
@@ -25,39 +27,26 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<User>>> index() {
-        ApiResponse<List<User>> response = this.userService.index();
-
-        return ResponseEntity.ok(response);
+        return userService.index();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<User>> show(@PathVariable Long id) {
-        ApiResponse<User> response = this.userService.show(id);
-
-        return ResponseEntity.ok(response);
+        return userService.show(id);
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<User>> store(@RequestBody UserDTO userDto) {
-        ApiResponse<User> response = this.userService.store(userDto);
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiResponse<User>> store(@RequestBody @Valid UserDTO userDto) {
+        return userService.store(userDto);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<User>> update(
-        @PathVariable Long id,
-        @RequestBody UserDTO userDto
-    ) {
-        ApiResponse<User> response = this.userService.update(id, userDto);
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiResponse<User>> update(@PathVariable Long id, @RequestBody @Valid UserDTO userDto) {
+        return userService.update(id, userDto);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> destroy(@PathVariable Long id) {
-        ApiResponse<Void> response = this.userService.destroy(id);
-
-        return ResponseEntity.ok(response);
+        return userService.destroy(id);
     }
 }
