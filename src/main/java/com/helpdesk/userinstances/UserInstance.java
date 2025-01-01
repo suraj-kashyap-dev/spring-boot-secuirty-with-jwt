@@ -1,95 +1,74 @@
 package com.helpdesk.userinstances;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import java.time.LocalDateTime;
-
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.helpdesk.roles.Role;
 import com.helpdesk.users.User;
 
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+
 @Entity
-@Getter
 @Setter
-@NoArgsConstructor
+@Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "user_instances")
 public class UserInstance {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 191)
+    @Column(name = "source")
     private String source;
 
-    @Column(length = 191)
+    @Column(name = "skype_id")
     private String skypeId;
 
-    @Column(length = 191)
+    @Column(name = "contact_number")
     private String contactNumber;
 
-    @Column(length = 191)
+    @Column(name = "designation")
     private String designation;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "signature")
     private String signature;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "profile_image_path")
     private String profileImagePath;
 
-    @Column(nullable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(nullable = false)
-    private boolean active = false;
+    @Column(name = "is_active")
+    private boolean active;
 
-    @Column(nullable = false)
-    private boolean verified = false;
+    @Column(name = "is_verified")
+    private boolean verified;
 
-    @Column(nullable = false)
-    private boolean starred = false;
+    @Column(name = "is_starred")
+    private boolean starred;
 
-    @Column(length = 32)
+    @Column(name = "ticket_access_level")
     private String ticketAccessLevel;
 
-    @Transient
+    @Column(name = "default_filtering")
     private Integer defaultFiltering;
 
-    @JsonBackReference("user-userInstance")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", nullable = false)
-    @JsonBackReference
+    @JsonIgnore
     private Role role;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-    
-    public boolean isActive() {
-        return active;
-    }
-
-    public boolean isVerified() {
-        return verified;
-    }
-
-    public boolean isStarred() {
-        return starred;
-    }
 }

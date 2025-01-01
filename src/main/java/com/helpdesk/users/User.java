@@ -3,17 +3,20 @@ package com.helpdesk.users;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.ToString;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.helpdesk.userinstances.UserInstance;
+
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -27,13 +30,13 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 191, unique = true)
+    @Column(length = 191, unique = true, nullable = false)
     private String email;
 
-    @Column(length = 191, unique = true)
+    @Column(length = 191, unique = true, nullable = true)
     private String proxyId;
 
-    @Column(length = 191)
+    @Column(length = 191, nullable = false)
     private String password;
 
     @Column(length = 191, nullable = false)
@@ -57,7 +60,7 @@ public class User implements UserDetails {
     @Column
     private LocalDateTime lastOtpGeneratedAt;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
@@ -67,8 +70,8 @@ public class User implements UserDetails {
     @JsonManagedReference
     private UserInstance activeInstance;
 
-    @JsonManagedReference("user-userInstance")
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    @JsonIgnore
     private List<UserInstance> userInstances = new ArrayList<>();
 
     @PrePersist
@@ -79,6 +82,34 @@ public class User implements UserDetails {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public UserInstance getActiveUserInstance() {
+        if (activeInstance == null && !userInstances.isEmpty()) {
+            activeInstance = userInstances.stream()
+                .filter(UserInstance::isActive)
+                .findFirst()
+                .orElse(userInstances.get(0));
+        }
+        return activeInstance;
+    }
+
+    public UserDTO toUserDTO() {
+        return new UserDTO(
+            this.id,
+            this.email,
+            this.proxyId,
+            this.firstName,
+            this.lastName,
+            this.enabled,
+            this.timezone,
+            this.timeformat,
+            this.password,
+            this.createdAt,
+            this.updatedAt,
+            this.userInstances,
+            this.getActiveUserInstance()
+        );
     }
 
     @Override
@@ -112,34 +143,5 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return this.enabled;
-    }
-
-    public UserInstance getActiveUserInstance() {
-        if (activeInstance == null && !userInstances.isEmpty()) {
-            activeInstance = userInstances.stream()
-                .filter(UserInstance::isActive)
-                .findFirst()
-                .orElse(userInstances.get(0));
-        }
-        return activeInstance;
-    }
-
-    // Convert User to UserDTO
-    public UserDTO toUserDTO() {
-        return new UserDTO(
-            this.id,
-            this.email,
-            this.proxyId,
-            this.firstName,
-            this.lastName,
-            this.enabled,
-            this.timezone,
-            this.timeformat,
-            this.password,
-            this.createdAt,
-            this.updatedAt,
-            this.userInstances,
-            this.getActiveUserInstance()
-        );
     }
 }

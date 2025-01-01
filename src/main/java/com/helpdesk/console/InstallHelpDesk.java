@@ -1,6 +1,7 @@
 package com.helpdesk.console;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -12,10 +13,20 @@ import com.helpdesk.userinstances.UserInstance;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.regex.Pattern;
 
 @Component
 public class InstallHelpDesk implements CommandLineRunner {
+    @Value("${helpdesk.admin.email}")
+    private String password;
+
+    @Value("${helpdesk.admin.email}")
+    private String email;
+
+    @Value("${helpdesk.admin.first-name}")
+    private String firstName;
+
+    @Value("${helpdesk.admin.last-name}")
+    private String lastName;
 
     @Autowired
     private UserRepository userRepository;
@@ -24,8 +35,6 @@ public class InstallHelpDesk implements CommandLineRunner {
     private RoleRepository roleRepository;
 
     private final BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder(12);
-    private final Scanner scanner = new Scanner(System.in);
-    private final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
 
     @Override
     public void run(String... args) {
@@ -36,17 +45,15 @@ public class InstallHelpDesk implements CommandLineRunner {
 
         if (rolesInitialized || adminInitialized) {
             System.out.println("\n[INFO] System has been initialized successfully!");
-        } else {
-            System.out.println("\n[INFO] HelpDesk system is already fully set up.");
         }
     }
 
     private boolean initializeRoles() {
-        List<Role> roles = Arrays.asList(
-            new Role(null, "ROLE_SUPER_ADMIN", "Account Owner"),
-            new Role(null, "ROLE_ADMIN", "Administrator"),
-            new Role(null, "ROLE_AGENT", "Agent"),
-            new Role(null, "ROLE_CUSTOMER", "Customer")
+        List<Role> roles = List.of(
+            new Role("ROLE_SUPER_ADMIN", "Account Owner"),
+            new Role("ROLE_ADMIN", "Administrator"),
+            new Role("ROLE_AGENT", "Agent"),
+            new Role("ROLE_CUSTOMER", "Customer")
         );
 
         boolean rolesCreated = false;
@@ -70,17 +77,8 @@ public class InstallHelpDesk implements CommandLineRunner {
         User adminUser = userRepository.findByEmail("admin@example.com");
 
         if (adminUser != null) {
-            System.out.println("[INFO] Admin account already exists.");
             return false;
         }
-
-        System.out.println("\n=== Create Admin Account ===");
-        String email = promptEmail();
-        String password = promptPassword();
-        System.out.print("First Name: ");
-        String firstName = scanner.nextLine().trim();
-        System.out.print("Last Name: ");
-        String lastName = scanner.nextLine().trim();
 
         User admin = new User();
         admin.setEmail(email);
@@ -106,41 +104,6 @@ public class InstallHelpDesk implements CommandLineRunner {
         admin.setUserInstances(List.of(adminInstance));
         userRepository.save(admin);
 
-        System.out.println("\n[INFO] Admin account created successfully.");
         return true;
-    }
-
-    private String promptEmail() {
-        while (true) {
-            System.out.print("Admin Email: ");
-            String email = scanner.nextLine().trim();
-
-            if (EMAIL_PATTERN.matcher(email).matches()) {
-                return email;
-            }
-
-            System.out.println("[ERROR] Invalid email format. Please try again.");
-        }
-    }
-
-    private String promptPassword() {
-        while (true) {
-            System.out.print("Password (min 8 characters): ");
-            String password = scanner.nextLine();
-
-            if (password.length() < 8) {
-                System.out.println("[ERROR] Password must be at least 8 characters long.");
-                continue;
-            }
-
-            System.out.print("Confirm Password: ");
-            String confirmPassword = scanner.nextLine();
-
-            if (password.equals(confirmPassword)) {
-                return password;
-            }
-
-            System.out.println("[ERROR] Passwords don't match. Please try again.");
-        }
     }
 }
