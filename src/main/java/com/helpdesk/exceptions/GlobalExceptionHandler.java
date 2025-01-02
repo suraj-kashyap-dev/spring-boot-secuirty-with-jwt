@@ -1,10 +1,10 @@
 package com.helpdesk.exceptions;
 
-import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -12,49 +12,158 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.helpdesk.exceptions.resources.ResourceCreationException;
 import com.helpdesk.exceptions.resources.ResourceNotFoundException;
 import com.helpdesk.exceptions.resources.ResourceUpdateException;
-import com.helpdesk.responses.ApiResponse;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleValidationErrors(MethodArgumentNotValidException ex) {
-        Map<String, Object> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors()
-            .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
+    public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException ex) {
+        log.error("Validation error occurred: {}", ex.getMessage());
         
-        return ApiResponse.error("Validation failed", errors, HttpStatus.UNPROCESSABLE_ENTITY);
+        Map<String, Object> response = new HashMap<>();
+        Map<String, List<String>> errors = new HashMap<>();
+        
+        ex.getBindingResult().getFieldErrors().forEach(error -> {
+            String field = error.getField();
+            String message = error.getDefaultMessage();
+            errors.computeIfAbsent(field, k -> new ArrayList<>()).add(message);
+        });
+        
+        response.put("message", "The given data was invalid.");
+        response.put("errors", errors);
+        
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(response);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
-        Map<String, Object> errors = new HashMap<>();
-        for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
+    public ResponseEntity<Map<String, Object>> handleConstraintViolation(ConstraintViolationException ex) {
+        log.error("Constraint violation: {}", ex.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        Map<String, List<String>> errors = new HashMap<>();
+        
+        ex.getConstraintViolations().forEach(violation -> {
             String propertyPath = violation.getPropertyPath().toString();
             String field = propertyPath.substring(propertyPath.lastIndexOf('.') + 1);
-            errors.put(field, violation.getMessage());
-        }
-        return ApiResponse.error("Validation failed", errors, HttpStatus.UNPROCESSABLE_ENTITY);
+            errors.computeIfAbsent(field, k -> new ArrayList<>()).add(violation.getMessage());
+        });
+        
+        response.put("message", "The given data was invalid.");
+        response.put("errors", errors);
+        
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(response);
     }
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(ResourceNotFoundException ex) {
-        log.error("Resource not found: {}", ex.getMessage());
-        return ApiResponse.error(ex.getMessage(), HttpStatus.NOT_FOUND);
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthorizationDenied(AuthorizationDeniedException ex) {
+        log.error("Authorization denied: {}", ex.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "You are not authorized to perform this action.");
+        response.put("details", ex.getMessage());
+        
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(response);
     }
 
     @ExceptionHandler({ResourceCreationException.class, ResourceUpdateException.class})
-    public ResponseEntity<ApiResponse<Void>> handleResourceOperation(Exception ex) {
+    public ResponseEntity<Map<String, Object>> handleResourceOperation(Exception ex) {
         log.error("Resource operation failed: {}", ex.getMessage());
-        return ApiResponse.error(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        
+        Map<String, Object> response = new HashMap<>();
+        Map<String, List<String>> errors = new HashMap<>();
+        
+        String[] errorParts = ex.getMessage().split(";");
+        for (String error : errorParts) {
+            String[] parts = error.trim().split(":", 2);
+            if (parts.length == 2) {
+                String field = parts[0].trim();
+                String message = parts[1].trim();
+                errors.computeIfAbsent(field, k -> new ArrayList<>()).add(message);
+            }
+        }
+
+        response.put("message", "The given data was invalid.");
+        response.put("errors", errors);
+        
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(response);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleResourceNotFound(ResourceNotFoundException ex) {
+        log.error("Resource not found: {}", ex.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", ex.getMessage());
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(response);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+        log.error("Illegal argument error: {}", ex.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        Map<String, List<String>> errors = new HashMap<>();
+        
+        if (ex.getMessage().contains("rawPassword")) {
+            errors.computeIfAbsent("password", k -> new ArrayList<>())
+                 .add("Password is required");
+        } else {
+            errors.computeIfAbsent("general", k -> new ArrayList<>())
+                 .add(ex.getMessage());
+        }
+        
+        response.put("message", "The given data was invalid.");
+        response.put("errors", errors);
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalExceptions(RuntimeException ex) {
+        log.error("Illegal state/argument error: {}", ex.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        Map<String, List<String>> errors = new HashMap<>();
+        
+        String message = ex.getMessage();
+        if (message != null) {
+            if (message.contains(":")) {
+                String[] parts = message.split(":", 2);
+                String field = parts[0].trim().toLowerCase();
+                String errorMessage = parts[1].trim();
+                errors.computeIfAbsent(field, k -> new ArrayList<>()).add(errorMessage);
+            } else {
+                errors.computeIfAbsent("general", k -> new ArrayList<>()).add(message);
+            }
+        }
+        
+        response.put("message", "The given data was invalid.");
+        response.put("errors", errors);
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(response);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
+    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
         log.error("Unexpected error: ", ex);
-        return ApiResponse.error("An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "An unexpected error occurred");
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(response);
     }
 }

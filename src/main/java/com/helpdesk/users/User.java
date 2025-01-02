@@ -67,15 +67,19 @@ public class User implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Set<GrantedAuthority> authorities = new HashSet<>();
+
         UserInstance activeInstance = getActiveUserInstance();
+
         if (activeInstance != null && activeInstance.getRole() != null) {
             String roleCode = activeInstance.getRole().getCode();
-            // Ensure the ROLE_ prefix is present
-            if (!roleCode.startsWith("ROLE_")) {
+            
+            if (! roleCode.startsWith("ROLE_")) {
                 roleCode = "ROLE_" + roleCode;
             }
+            
             authorities.add(new SimpleGrantedAuthority(roleCode));
-            System.out.println("Assigned authority: " + roleCode); // Add this for debugging
+
+            System.out.println("Assigned authority: " + roleCode);
         }
         return authorities;
     }
