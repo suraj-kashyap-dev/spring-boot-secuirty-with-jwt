@@ -63,7 +63,7 @@ public class UserServiceImpl implements UserService {
         User user = modelMapper.map(userDto, User.class);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        Role customerRole = roleRepository.findByCode("ROLE_CUSTOMER")
+        Role customerRole = roleRepository.findByCode("CUSTOMER")
             .orElseThrow(() -> new ResourceNotFoundException("Default role not found"));
 
         UserInstance userInstance = new UserInstance();

@@ -8,7 +8,10 @@ import org.springframework.stereotype.Service;
 import com.helpdesk.users.User;
 import com.helpdesk.users.UserRepository;
 
+import jakarta.transaction.Transactional;
+
 @Service
+@Transactional
 public class UserDetailsService implements org.springframework.security.core.userdetails.UserDetailsService {
     @Autowired
     private UserRepository userRepository;

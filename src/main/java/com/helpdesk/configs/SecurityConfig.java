@@ -36,30 +36,58 @@ public class SecurityConfig {
     @Autowired
     private JwtFilter jwtFilter;
 
+    // @Bean
+    // public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    //     return http
+    //         .csrf(AbstractHttpConfigurer::disable)
+    //         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+    //         .authorizeHttpRequests(auth -> auth
+    //             .requestMatchers("/api/v1/auth/**").permitAll()
+    //             .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+    //             .requestMatchers("/api/v1/customer/**").hasRole("CUSTOMER")
+    //             .requestMatchers("/api/v1/user/**").hasAnyRole("ADMIN", "CUSTOMER", "USER")
+    //             .anyRequest().authenticated()
+    //         )
+    //         .sessionManagement(session -> 
+    //             session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+    //         )
+    //         .authenticationProvider(authenticationProvider())
+    //         .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+    //         .exceptionHandling(exception -> 
+    //             exception
+    //                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+    //                 .accessDeniedHandler(new AccessDeniedHandlerImpl())
+    //         )
+    //         .build();
+    // }
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/v1/customer/**").hasRole("CUSTOMER")
-                .requestMatchers("/api/v1/user/**").hasAnyRole("ADMIN", "CUSTOMER", "USER")
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(session -> 
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-            .exceptionHandling(exception -> 
-                exception
-                    .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-                    .accessDeniedHandler(new AccessDeniedHandlerImpl())
-            )
-            .build();
-    }
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    return http
+        .csrf(AbstractHttpConfigurer::disable)
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/api/v1/auth/**").permitAll()
+            .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+            .requestMatchers("/api/v1/customer/**").hasRole("CUSTOMER")
+            .requestMatchers("/api/v1/user/**").hasAnyRole("ADMIN", "CUSTOMER", "USER")
+            .anyRequest().authenticated()
+        )
+        .sessionManagement(session -> 
+            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        )
+        .authenticationProvider(authenticationProvider())
+        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+        .exceptionHandling(exception -> 
+            exception
+                .authenticationEntryPoint((request, response, authException) -> {
+                    System.out.println("Authentication failed: " + authException.getMessage());
+                    response.sendError(HttpStatus.UNAUTHORIZED.value(), 
+                        authException.getMessage());
+                })
+        )
+        .build();
+}
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

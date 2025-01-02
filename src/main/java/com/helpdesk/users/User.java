@@ -60,7 +60,7 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonIgnore
     private Set<UserInstance> userInstances = new HashSet<>();
 
@@ -69,7 +69,13 @@ public class User implements UserDetails {
         Set<GrantedAuthority> authorities = new HashSet<>();
         UserInstance activeInstance = getActiveUserInstance();
         if (activeInstance != null && activeInstance.getRole() != null) {
-            authorities.add(new SimpleGrantedAuthority(activeInstance.getRole().getCode()));
+            String roleCode = activeInstance.getRole().getCode();
+            // Ensure the ROLE_ prefix is present
+            if (!roleCode.startsWith("ROLE_")) {
+                roleCode = "ROLE_" + roleCode;
+            }
+            authorities.add(new SimpleGrantedAuthority(roleCode));
+            System.out.println("Assigned authority: " + roleCode); // Add this for debugging
         }
         return authorities;
     }
