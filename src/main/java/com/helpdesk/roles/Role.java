@@ -45,7 +45,6 @@ public class Role {
         this.description = description;
     }
 
-    
     public String getCode() {
         return code != null && !code.startsWith("ROLE_") ? "ROLE_" + code : code;
     }
