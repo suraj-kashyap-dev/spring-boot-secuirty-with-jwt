@@ -1,10 +1,6 @@
 package com.helpdesk.users;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -29,16 +25,13 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Email(message = "Email should be valid")
     @Column(length = 191, unique = true, nullable = false)
     private String email;
 
-    @NotNull(message = "Password should not be null")
-    @Size(min = 8, message = "Password should be at least 8 characters")
     @Column(length = 191, nullable = false)
+    @JsonIgnore
     private String password;
 
-    @NotEmpty(message = "First name should not be empty")
     @Column(length = 191, nullable = false)
     private String firstName;
 

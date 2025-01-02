@@ -8,6 +8,8 @@ import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.helpdesk.exceptions.resources.ResourceCreationException;
 import com.helpdesk.exceptions.resources.ResourceNotFoundException;
@@ -164,6 +166,29 @@ public class GlobalExceptionHandler {
         response.put("message", "An unexpected error occurred");
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(response);
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
+        log.error("Multipart exception: {}", ex.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "The given data was invalid.");
+        response.put("errors", ex.getMessage());
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoResourceFound(NoResourceFoundException ex) {
+        log.error("No resource found: {}", ex.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", ex.getMessage());
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(response);
     }
 }

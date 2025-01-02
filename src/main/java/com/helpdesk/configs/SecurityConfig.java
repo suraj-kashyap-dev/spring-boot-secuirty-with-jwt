@@ -40,11 +40,12 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**").permitAll() // Open access
-                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") // ADMIN only
-                .requestMatchers("/api/v1/customer/**").hasAnyRole("ADMIN", "CUSTOMER") // Accessible by ADMIN and CUSTOMER
-                .requestMatchers("/api/v1/user/**").hasAnyRole("ADMIN", "CUSTOMER", "USER") // Accessible by multiple roles
-                .anyRequest().authenticated() // All other requests require authentication
+                .requestMatchers("/uploads/**").permitAll()
+                .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/customer/**").hasAnyRole("ADMIN", "CUSTOMER")
+                .requestMatchers("/api/v1/user/**").hasAnyRole("ADMIN", "CUSTOMER", "USER")
+                .anyRequest().authenticated()
             )
             .sessionManagement(session -> 
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)

@@ -6,10 +6,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,7 +18,7 @@ import com.helpdesk.responses.ApiResponse;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/v1/user")
+@RequestMapping("/api/v1/users")
 public class UserController {
     private final UserService userService;
 
@@ -40,14 +40,14 @@ public class UserController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<User>> store(@RequestBody @Valid UserDTO userDto) {
+    public ResponseEntity<ApiResponse<User>> store(@Valid @ModelAttribute UserDTO userDto){
         return userService.store(userDto);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<User>> update(@PathVariable Long id, @RequestBody @Valid UserDTO userDto) {
-        return userService.update(id, userDto);
+    public ResponseEntity<ApiResponse<User>> update(@Valid @ModelAttribute UserDTO userDto, @PathVariable Long id) {
+        return userService.update(userDto, id);
     }
 
     @DeleteMapping("/{id}")
