@@ -1,5 +1,6 @@
 package com.helpdesk.console;
 
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -50,9 +51,9 @@ public class InstallHelpDesk implements CommandLineRunner {
 
     private boolean initializeRoles() {
         List<Role> roles = List.of(
-            new Role("ROLE_ADMIN", "Account Owner"),
-            new Role("ROLE_AGENT", "Agent"),
-            new Role("ROLE_CUSTOMER", "Customer")
+            new Role("ADMIN", "Account Owner"),
+            new Role("AGENT", "Agent"),
+            new Role("CUSTOMER", "Customer")
         );
 
         boolean rolesCreated = false;
@@ -88,8 +89,10 @@ public class InstallHelpDesk implements CommandLineRunner {
         admin.setCreatedAt(LocalDateTime.now());
         admin.setUpdatedAt(LocalDateTime.now());
 
-        Role adminRole = roleRepository.findByCode("ROLE_ADMIN")
+        Role adminRole = roleRepository.findByCode("ADMIN")
             .orElseThrow(() -> new RuntimeException("[ERROR] Admin role not found"));
+
+        Hibernate.initialize(adminRole);
 
         UserInstance adminInstance = new UserInstance();
         adminInstance.setUser(admin);
